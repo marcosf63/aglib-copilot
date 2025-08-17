@@ -375,9 +375,9 @@ Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICEN
 
 ## 📞 Suporte
 
-- **Issues**: [GitHub Issues](https://github.com/seu-usuario/aglib-copilot-consultat/issues)
-- **Discussões**: [GitHub Discussions](https://github.com/seu-usuario/aglib-copilot-consultat/discussions)
-- **Email**: seu-email@exemplo.com
+- **Issues**: [GitHub Issues](https://github.com/marcosf63/aglib-copilot-consultat/issues)
+- **Discussões**: [GitHub Discussions](https://github.com/marcosf63/aglib-copilot-consultat/discussions)
+- **Email**: marcosf63@gmail.com
 
 ## 🙏 Reconhecimentos
 
