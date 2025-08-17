@@ -4,10 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, field
 from enum import Enum
-import asyncio
 import logging
 
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -76,53 +74,55 @@ class OpenAIAdapter(LLMAdapter):
         if self._client is None:
             try:
                 import openai
+
                 self._client = openai.AsyncOpenAI(api_key=self.api_key)
             except ImportError:
                 raise ImportError("openai package not installed")
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
         await self._initialize_client()
-        
+
         try:
             messages = [
-                {"role": msg.role, "content": msg.content} 
-                for msg in request.messages
+                {"role": msg.role, "content": msg.content} for msg in request.messages
             ]
-            
+
             kwargs = {
                 "model": request.model or self.model,
                 "messages": messages,
                 "temperature": request.temperature,
             }
-            
+
             if request.max_tokens:
                 kwargs["max_tokens"] = request.max_tokens
-                
+
             if request.tools:
                 kwargs["tools"] = request.tools
                 kwargs["tool_choice"] = "auto"
 
             response = await self._client.chat.completions.create(**kwargs)
-            
+
             content = ""
             tool_calls = []
-            
+
             if response.choices[0].message.content:
                 content = response.choices[0].message.content
-                
+
             if response.choices[0].message.tool_calls:
                 tool_calls = [
                     {
                         "id": call.id,
                         "function": call.function.name,
-                        "arguments": call.function.arguments
+                        "arguments": call.function.arguments,
                     }
                     for call in response.choices[0].message.tool_calls
                 ]
 
             usage = {
                 "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
-                "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                "completion_tokens": (
+                    response.usage.completion_tokens if response.usage else 0
+                ),
                 "total_tokens": response.usage.total_tokens if response.usage else 0,
             }
 
@@ -130,7 +130,10 @@ class OpenAIAdapter(LLMAdapter):
                 content=content,
                 usage=usage,
                 tool_calls=tool_calls,
-                metadata={"model": response.model, "finish_reason": response.choices[0].finish_reason}
+                metadata={
+                    "model": response.model,
+                    "finish_reason": response.choices[0].finish_reason,
+                },
             )
 
         except Exception as e:
@@ -149,18 +152,19 @@ class AnthropicAdapter(LLMAdapter):
         if self._client is None:
             try:
                 import anthropic
+
                 self._client = anthropic.AsyncAnthropic(api_key=self.api_key)
             except ImportError:
                 raise ImportError("anthropic package not installed")
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
         await self._initialize_client()
-        
+
         try:
             # Convert messages to Anthropic format
             system_message = ""
             messages = []
-            
+
             for msg in request.messages:
                 if msg.role == "system":
                     system_message = msg.content
@@ -173,27 +177,28 @@ class AnthropicAdapter(LLMAdapter):
                 "temperature": request.temperature,
                 "max_tokens": request.max_tokens or 2000,
             }
-            
+
             if system_message:
                 kwargs["system"] = system_message
 
             response = await self._client.messages.create(**kwargs)
-            
+
             content = ""
             if response.content and len(response.content) > 0:
                 content = response.content[0].text
 
             usage = {
                 "prompt_tokens": response.usage.input_tokens,
-                "completion_tokens": response.usage.output_tokens, 
-                "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                "completion_tokens": response.usage.output_tokens,
+                "total_tokens": response.usage.input_tokens
+                + response.usage.output_tokens,
             }
 
             return LLMResponse(
                 content=content,
                 usage=usage,
                 tool_calls=[],  # Tool calls not implemented for Anthropic yet
-                metadata={"model": response.model, "stop_reason": response.stop_reason}
+                metadata={"model": response.model, "stop_reason": response.stop_reason},
             )
 
         except Exception as e:
@@ -204,16 +209,19 @@ class AnthropicAdapter(LLMAdapter):
 class LocalAdapter(LLMAdapter):
     def __init__(self, model: str = "llama2", **config):
         super().__init__(model, **config)
-        self.base_url = config.get("base_url") or os.getenv("LOCAL_LLM_URL", "http://localhost:11434")
+        self.base_url = config.get("base_url") or os.getenv(
+            "LOCAL_LLM_URL", "http://localhost:11434"
+        )
 
     async def _initialize_client(self):
         if self._client is None:
             import httpx
+
             self._client = httpx.AsyncClient(base_url=self.base_url, timeout=60.0)
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
         await self._initialize_client()
-        
+
         try:
             # Format for Ollama API
             prompt = ""
@@ -224,22 +232,22 @@ class LocalAdapter(LLMAdapter):
                     prompt += f"User: {msg.content}\n"
                 elif msg.role == "assistant":
                     prompt += f"Assistant: {msg.content}\n"
-            
+
             prompt += "Assistant: "
 
             payload = {
                 "model": request.model or self.model,
                 "prompt": prompt,
                 "temperature": request.temperature,
-                "stream": False
+                "stream": False,
             }
-            
+
             if request.max_tokens:
                 payload["options"] = {"num_predict": request.max_tokens}
 
             response = await self._client.post("/api/generate", json=payload)
             response.raise_for_status()
-            
+
             data = response.json()
             content = data.get("response", "")
 
@@ -247,7 +255,7 @@ class LocalAdapter(LLMAdapter):
                 content=content,
                 usage={"total_tokens": len(content.split())},  # Rough estimate
                 tool_calls=[],
-                metadata={"model": data.get("model", self.model)}
+                metadata={"model": data.get("model", self.model)},
             )
 
         except Exception as e:
@@ -257,10 +265,12 @@ class LocalAdapter(LLMAdapter):
 
 class LLMFactory:
     @staticmethod
-    def create(provider: Union[str, LLMProvider], model: str = None, **config) -> LLMAdapter:
+    def create(
+        provider: Union[str, LLMProvider], model: str = None, **config
+    ) -> LLMAdapter:
         if isinstance(provider, str):
             provider = LLMProvider(provider)
-            
+
         if provider == LLMProvider.OPENAI:
             return OpenAIAdapter(model or "gpt-3.5-turbo", **config)
         elif provider == LLMProvider.ANTHROPIC:
@@ -295,7 +305,7 @@ class LLMWithFallback(LLMAdapter):
                     content="I apologize, but I'm experiencing technical difficulties. Please try again later.",
                     usage={},
                     tool_calls=[],
-                    metadata={"error": "both_llms_failed"}
+                    metadata={"error": "both_llms_failed"},
                 )
 
 

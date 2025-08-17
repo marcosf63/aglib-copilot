@@ -1,7 +1,6 @@
 from __future__ import annotations
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
 
 
 @dataclass
@@ -14,27 +13,29 @@ class PromptTemplate:
 
     def render(self, **variables) -> List[Dict[str, str]]:
         messages = []
-        
+
         # System message
         system_content = self.system_prompt.format(**variables)
         if self.instructions:
-            instructions_text = "\n".join(f"- {instruction}" for instruction in self.instructions)
+            instructions_text = "\n".join(
+                f"- {instruction}" for instruction in self.instructions
+            )
             system_content += f"\n\nInstructions:\n{instructions_text}"
-        
+
         messages.append({"role": "system", "content": system_content})
-        
+
         # Few-shot examples
         for example in self.few_shot_examples:
             if "user" in example:
                 messages.append({"role": "user", "content": example["user"]})
             if "assistant" in example:
                 messages.append({"role": "assistant", "content": example["assistant"]})
-        
+
         # Current user message
         if self.user_template:
             user_content = self.user_template.format(**variables)
             messages.append({"role": "user", "content": user_content})
-        
+
         return messages
 
 
@@ -74,31 +75,29 @@ Agentes disponíveis:
 
 Contexto do usuário: {user_context}
 Histórico da conversa: {conversation_history}""",
-            
             few_shot_examples=[
                 {
                     "user": "Oi, bom dia!",
-                    "assistant": "Olá! Bom dia! Sou seu assistente virtual. Posso ajudar com agendamentos, pagamentos, suporte técnico ou até gerar imagens. O que você precisa hoje?"
+                    "assistant": "Olá! Bom dia! Sou seu assistente virtual. Posso ajudar com agendamentos, pagamentos, suporte técnico ou até gerar imagens. O que você precisa hoje?",
                 },
                 {
                     "user": "Quero agendar um corte para amanhã",
-                    "assistant": "Vou te encaminhar para nosso especialista em agendamentos que poderá verificar a disponibilidade e agendar seu corte para amanhã."
+                    "assistant": "Vou te encaminhar para nosso especialista em agendamentos que poderá verificar a disponibilidade e agendar seu corte para amanhã.",
                 },
                 {
                     "user": "Não consegui pagar minha conta",
-                    "assistant": "Vou te conectar com nosso especialista em pagamentos que poderá ajudar a resolver essa questão financeira."
-                }
+                    "assistant": "Vou te conectar com nosso especialista em pagamentos que poderá ajudar a resolver essa questão financeira.",
+                },
             ],
-            
             instructions=[
                 "Seja sempre cortês e profissional",
                 "Responda saudações diretamente",
                 "Para questões específicas, explique brevemente antes de rotear",
                 "Se não tiver certeza, pergunte mais detalhes",
-                "Para emergências ou casos muito complexos, escale para humano"
-            ]
+                "Para emergências ou casos muito complexos, escale para humano",
+            ],
         )
-        
+
         # Scheduling Specialist Template
         scheduling_template = PromptTemplate(
             system_prompt="""Você é o SchedulingSpecialist, especialista em agendamentos e gestão de calendário.
@@ -113,27 +112,25 @@ Dados do cliente: {customer_data}
 Calendário atual: {calendar_data}
 
 Sempre confirme os detalhes antes de finalizar qualquer agendamento.""",
-            
             few_shot_examples=[
                 {
                     "user": "Quero agendar um corte para amanhã às 14h",
-                    "assistant": "Vou verificar a disponibilidade para amanhã às 14h. Que tipo de serviço você gostaria? Corte masculino, feminino, ou algum serviço específico?"
+                    "assistant": "Vou verificar a disponibilidade para amanhã às 14h. Que tipo de serviço você gostaria? Corte masculino, feminino, ou algum serviço específico?",
                 },
                 {
                     "user": "Preciso cancelar meu agendamento de sexta",
-                    "assistant": "Claro! Vou localizar seu agendamento de sexta-feira. Encontrei: Corte às 15h. Posso cancelar para você. Gostaria de reagendar para outra data?"
-                }
+                    "assistant": "Claro! Vou localizar seu agendamento de sexta-feira. Encontrei: Corte às 15h. Posso cancelar para você. Gostaria de reagendar para outra data?",
+                },
             ],
-            
             instructions=[
                 "Sempre confirme horário, data e tipo de serviço",
                 "Ofereça alternativas se o horário solicitado não estiver disponível",
                 "Seja específico sobre tempo de duração dos serviços",
-                "Envie confirmações após cada agendamento"
-            ]
+                "Envie confirmações após cada agendamento",
+            ],
         )
 
-        # Payments Specialist Template  
+        # Payments Specialist Template
         payments_template = PromptTemplate(
             system_prompt="""Você é o PaymentsSpecialist, especialista em pagamentos e transações financeiras.
 
@@ -147,25 +144,23 @@ Dados financeiros do cliente: {financial_data}
 Histórico de transações: {transaction_history}
 
 IMPORTANTE: Nunca peça informações de cartão diretamente. Use sempre links seguros.""",
-            
             few_shot_examples=[
                 {
                     "user": "Quero pagar meu agendamento",
-                    "assistant": "Perfeito! Vou processar o pagamento do seu agendamento. O valor é R$ 45,00. Você pode pagar via PIX, cartão ou dinheiro. Qual prefere?"
+                    "assistant": "Perfeito! Vou processar o pagamento do seu agendamento. O valor é R$ 45,00. Você pode pagar via PIX, cartão ou dinheiro. Qual prefere?",
                 },
                 {
                     "user": "Não consegui finalizar o pagamento",
-                    "assistant": "Vou verificar o que aconteceu com seu pagamento. Pode me informar qual método você estava tentando usar? Vou resolver isso para você."
-                }
+                    "assistant": "Vou verificar o que aconteceu com seu pagamento. Pode me informar qual método você estava tentando usar? Vou resolver isso para você.",
+                },
             ],
-            
             instructions=[
                 "Sempre confirme valores antes de processar",
                 "Use métodos de pagamento seguros",
                 "Explique taxas quando aplicáveis",
                 "Forneça recibos após pagamentos bem-sucedidos",
-                "Para problemas complexos, ofereça contato direto"
-            ]
+                "Para problemas complexos, ofereça contato direto",
+            ],
         )
 
         # Support Agent Template
@@ -182,25 +177,23 @@ Base de conhecimento disponível: {knowledge_base}
 Histórico de tickets do cliente: {ticket_history}
 
 Seja empático e paciente. Explique soluções de forma clara e didática.""",
-            
             few_shot_examples=[
                 {
                     "user": "O app está travando quando tento agendar",
-                    "assistant": "Entendo sua frustração com o app travando. Vou te ajudar a resolver isso. Primeiro, você pode tentar fechar completamente o app e abrir novamente? Também vou verificar se há algum problema conhecido."
+                    "assistant": "Entendo sua frustração com o app travando. Vou te ajudar a resolver isso. Primeiro, você pode tentar fechar completamente o app e abrir novamente? Também vou verificar se há algum problema conhecido.",
                 },
                 {
                     "user": "Como funciona o sistema de pontos?",
-                    "assistant": "Ótima pergunta! Nosso sistema de pontos funciona assim: a cada R$ 10 gastos, você ganha 1 ponto. Com 50 pontos você pode trocar por um desconto de 10%. Os pontos ficam válidos por 12 meses."
-                }
+                    "assistant": "Ótima pergunta! Nosso sistema de pontos funciona assim: a cada R$ 10 gastos, você ganha 1 ponto. Com 50 pontos você pode trocar por um desconto de 10%. Os pontos ficam válidos por 12 meses.",
+                },
             ],
-            
             instructions=[
                 "Seja empático e compreensivo",
                 "Ofereça soluções passo-a-passo",
                 "Use linguagem simples e clara",
                 "Busque na base de conhecimento quando necessário",
-                "Crie tickets para problemas que requerem investigação"
-            ]
+                "Crie tickets para problemas que requerem investigação",
+            ],
         )
 
         # Image Consultant Template
@@ -217,25 +210,23 @@ Perfil do cliente: {client_profile}
 Histórico de preferências: {style_preferences}
 
 Seja criativo, mas sempre pergunte detalhes específicos para criar exatamente o que o cliente quer.""",
-            
             few_shot_examples=[
                 {
                     "user": "Quero uma imagem de um corte moderno",
-                    "assistant": "Que legal! Vou te ajudar a criar a imagem de um corte moderno. Para ter o resultado perfeito, me conta: é corte masculino ou feminino? Que estilo você tem em mente - mais clássico-moderno, ousado, ou minimalista?"
+                    "assistant": "Que legal! Vou te ajudar a criar a imagem de um corte moderno. Para ter o resultado perfeito, me conta: é corte masculino ou feminino? Que estilo você tem em mente - mais clássico-moderno, ousado, ou minimalista?",
                 },
                 {
                     "user": "Preciso de um logo para minha empresa",
-                    "assistant": "Excelente! Criar um logo é muito importante. Me conta sobre sua empresa: qual o ramo de atividade, que sensação quer transmitir (confiança, inovação, elegância), e se tem alguma cor de preferência?"
-                }
+                    "assistant": "Excelente! Criar um logo é muito importante. Me conta sobre sua empresa: qual o ramo de atividade, que sensação quer transmitir (confiança, inovação, elegância), e se tem alguma cor de preferência?",
+                },
             ],
-            
             instructions=[
                 "Sempre pergunte detalhes específicos antes de gerar",
                 "Sugira diferentes estilos e abordagens",
                 "Explique conceitos visuais de forma acessível",
                 "Ofereça variações quando solicitado",
-                "Seja criativo mas mantenha o foco no pedido do cliente"
-            ]
+                "Seja criativo mas mantenha o foco no pedido do cliente",
+            ],
         )
 
         # Copilot Agent Template
@@ -253,14 +244,13 @@ Dados do cliente: {full_customer_data}
 Situação atual: {current_situation}
 
 Suas sugestões devem ser práticas e ajudar o operador a ser mais eficiente.""",
-            
             instructions=[
                 "Forneça sugestões objetivas e práticas",
                 "Destaque informações importantes do cliente",
                 "Sugira ações específicas quando apropriado",
                 "Sinalize casos que requerem atenção especial",
-                "Mantenha tom profissional adequado para operadores"
-            ]
+                "Mantenha tom profissional adequado para operadores",
+            ],
         )
 
         # Human Bridge Template
@@ -278,14 +268,13 @@ Especialidade requerida: {required_specialty}
 Urgência: {urgency_level}
 
 Organize as informações de forma que o consultor humano possa atender imediatamente.""",
-            
             instructions=[
                 "Organize informações de forma clara e estruturada",
                 "Destaque pontos críticos que requerem atenção",
                 "Indique o tipo de especialista mais adequado",
                 "Forneça contexto suficiente para atendimento imediato",
-                "Mantenha registro organizado para follow-up"
-            ]
+                "Mantenha registro organizado para follow-up",
+            ],
         )
 
         # Register all templates
@@ -296,7 +285,7 @@ Organize as informações de forma que o consultor humano possa atender imediata
             "support": support_template,
             "image_consultant": image_template,
             "copilot": copilot_template,
-            "human_bridge": human_bridge_template
+            "human_bridge": human_bridge_template,
         }
 
         for name, template in templates.items():

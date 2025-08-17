@@ -1,6 +1,6 @@
 from typing import Dict
-from .types import Message
 from ..agents.base import Agent
+
 
 class AgentRegistry:
     def __init__(self):

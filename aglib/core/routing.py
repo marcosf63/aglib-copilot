@@ -3,12 +3,15 @@ from ..core.types import Message, AgentOutput, Action
 from ..core.context import Session
 from ..policies.handoff import HandoffPolicy
 
+
 class Router:
     def __init__(self, registry: AgentRegistry, handoff: HandoffPolicy):
         self.registry = registry
         self.handoff = handoff
 
-    async def dispatch(self, entry_agent: str, msg: Message, session: Session) -> AgentOutput:
+    async def dispatch(
+        self, entry_agent: str, msg: Message, session: Session
+    ) -> AgentOutput:
         agent = self.registry.get(entry_agent)
         out = await agent.handle(msg, session)
         session.last_agent = agent.name

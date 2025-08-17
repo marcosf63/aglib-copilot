@@ -1,8 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, Optional, List, Union, Callable
+from typing import Any, Dict, Optional, List, Callable, TYPE_CHECKING
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from aglib.core.context import Session
 
 
 class Action(Enum):
@@ -40,6 +43,7 @@ class AgentOutput:
 
 # --- Tool System Types ---
 
+
 @dataclass
 class ToolParameter:
     name: str
@@ -70,7 +74,7 @@ class ToolCall:
     timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass 
+@dataclass
 class ToolResult:
     tool_call_id: str
     status: ToolStatus
@@ -81,6 +85,7 @@ class ToolResult:
 
 
 # --- Enhanced Agent Types ---
+
 
 @dataclass
 class AgentConfig:
@@ -107,6 +112,7 @@ class AgentCapabilities:
 
 # --- Copilot contracts (Enhanced) ---
 
+
 @dataclass
 class Suggestion:
     text: str
@@ -120,7 +126,7 @@ class Suggestion:
 @dataclass
 class CopilotInput:
     message: Message
-    session: "Session"  # forward-ref, defined in context.py
+    session: Session
     history: List[Message] = field(default_factory=list)
     context: Dict[str, Any] = field(default_factory=dict)
     operator_context: Dict[str, Any] = field(default_factory=dict)
@@ -136,6 +142,7 @@ class CopilotOutput:
 
 
 # --- LLM Integration Types ---
+
 
 @dataclass
 class LLMUsage:
@@ -160,8 +167,11 @@ class AgentPerformanceMetrics:
 
 # --- Error Types ---
 
+
 class AgentError(Exception):
-    def __init__(self, message: str, error_code: str = "AGENT_ERROR", agent_name: str = "unknown"):
+    def __init__(
+        self, message: str, error_code: str = "AGENT_ERROR", agent_name: str = "unknown"
+    ):
         super().__init__(message)
         self.error_code = error_code
         self.agent_name = agent_name
@@ -177,7 +187,9 @@ class ToolError(Exception):
 
 
 class LLMError(Exception):
-    def __init__(self, message: str, provider: str, model: str, error_code: str = "LLM_ERROR"):
+    def __init__(
+        self, message: str, provider: str, model: str, error_code: str = "LLM_ERROR"
+    ):
         super().__init__(message)
         self.provider = provider
         self.model = model
@@ -186,6 +198,7 @@ class LLMError(Exception):
 
 
 # --- Validation and Security Types ---
+
 
 @dataclass
 class ValidationRule:
@@ -207,6 +220,7 @@ class SecurityPolicy:
 
 # --- Event System Types ---
 
+
 @dataclass
 class AgentEvent:
     event_type: str  # "message_received", "tool_called", "error_occurred", etc.
@@ -221,6 +235,7 @@ EventHandler = Callable[[AgentEvent], None]
 
 
 # --- Configuration Types ---
+
 
 @dataclass
 class SystemConfig:

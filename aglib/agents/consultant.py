@@ -1,10 +1,12 @@
-from typing import Dict, Optional
+from typing import Dict
 from ..agents.base import Agent
 from ..core.types import AgentOutput, Action, Message
 from ..core.context import Session
 
+
 class ConsultantHub:
     """Registro simples de consultores; usado *somente* pelo Pilot."""
+
     def __init__(self):
         self._items: Dict[str, Agent] = {}
 
@@ -21,6 +23,7 @@ class ConsultantHub:
 
 class ImageConsultant(Agent):
     """Exemplo de consultor: gera imagem (stub)."""
+
     def __init__(self):
         super().__init__("Consultant:Image")
 
@@ -31,5 +34,5 @@ class ImageConsultant(Agent):
         return AgentOutput(
             action=Action.NOOP,
             text=f"[consultor] imagem gerada (stub): {url}",
-            payload={"image_url": url, "prompt": prompt}
+            payload={"image_url": url, "prompt": prompt},
         )

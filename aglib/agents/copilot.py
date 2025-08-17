@@ -1,10 +1,17 @@
 from typing import List
 from ..core.types import CopilotInput, CopilotOutput, Suggestion
 
+
 class CopilotTools:
-    async def fetch_crm(self, user_id: str) -> dict: return {}
-    async def search_kb(self, query: str) -> List[str]: return []
-    async def create_ticket(self, payload: dict) -> str: return "TCK-0001"
+    async def fetch_crm(self, user_id: str) -> dict:
+        return {}
+
+    async def search_kb(self, query: str) -> List[str]:
+        return []
+
+    async def create_ticket(self, payload: dict) -> str:
+        return "TCK-0001"
+
 
 class CopilotAgent:
     def __init__(self, tools: CopilotTools):
@@ -30,6 +37,9 @@ class CopilotAgent:
             draft += f"\n\nContexto CRM: {crm.get('status','sem status')}"
 
         s1 = Suggestion(text=draft, confidence=0.72)
-        s2 = Suggestion(text="Confirmo dados e abro ticket prioritário.", confidence=0.55,
-                        actions={"create_ticket": {"priority": "high"}})
+        s2 = Suggestion(
+            text="Confirmo dados e abro ticket prioritário.",
+            confidence=0.55,
+            actions={"create_ticket": {"priority": "high"}},
+        )
         return CopilotOutput(suggestions=[s1, s2])
